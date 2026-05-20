@@ -1,0 +1,1027 @@
+{
+  "name": "Winona Go to Sea",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c17fe00f-7d84-463d-b946-36f73d144ae4",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo",
+          "mode": "list",
+          "cachedResultName": "China Beauty Brand n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "context",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "b3449db2-379c-4347-8734-4d25afa42509",
+      "name": "Raw Data",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iScZb42KeWr0KdSj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node (JavaScript)\n\n// items 是 Google Sheets 节点传入的所有行\nconst structured = {};\nlet promptText = '';\n\n// 防御性判断\nif (!items || items.length === 0) {\n  return [\n    {\n      json: {\n        error: 'No data received from Google Sheets'\n      }\n    }\n  ];\n}\n\n// 工具函数：兼容不同字段命名\nfunction getField(obj, possibleKeys) {\n  for (const key of possibleKeys) {\n    if (obj[key] !== undefined && obj[key] !== null && obj[key] !== '') {\n      return obj[key];\n    }\n  }\n  return null;\n}\n\nfor (const item of items) {\n  const row = item.json;\n\n  const section = getField(row, ['section', 'Section', 'SECTION']);\n  const key = getField(row, ['key', 'Key', 'KEY']);\n  const content = getField(row, ['content', 'Content', 'CONTENT']);\n\n  // 如果这一行字段不完整，直接跳过\n  if (!section || !key || !content) {\n    continue;\n  }\n\n  if (!structured[section]) {\n    structured[section] = {};\n    promptText += `\\n【${section}】\\n`;\n  }\n\n  structured[section][key] = content;\n  promptText += `- ${key}: ${content}\\n`;\n}\n\nreturn [\n  {\n    json: {\n      structured_context: structured,\n      prompt_context: promptText.trim()\n    }\n  }\n];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "06e5097a-a77b-4de2-8466-468322429bd3",
+      "name": "Code in JavaScript",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Role\nYou are a specialized [Structured Insight Engine] for an international market strategy project. Your core objective is to distill raw research data into high-purity, structured intelligence \"fuel\" for downstream strategy-planning agents.\n\n# Input Variable\n- Primary Data Source: {{ $json.prompt_context }}\n\n# Strict Operational Rules (Guiding Principles)\n1. **Zero-Hallucination Mandate**: Process ONLY the text explicitly present in {{ $json.prompt_context }}. \n2. **No External Knowledge**: Do not use outside facts about Winona, the skincare industry, or regional demographics. If it is not in the variable, it does not exist.\n3. **Evidence Tagging**: For every insight, include a brief reference to its source in the input (e.g., [Source: Spreadsheet Row X] or [Source: Interview Transcript]).\n4. **Handling Data Gaps**: If a required section is missing from the input, explicitly output: \"DATA GAP: No relevant information provided in source.\"\n5. **Direct Output**: Do not include conversational filler, greetings, or \"Based on the data...\" intros. Begin immediately with the Markdown headers.\n\n# Output Structure (Language: English)\n\n## I. Brand Audit: Winona\n- **Core Positioning & Strengths**: (Extract brand identity, core ingredients, or competitive advantages mentioned)\n- **Strategic Constraints/Challenges**: (Extract pain points, supply chain issues, or barriers mentioned)\n\n## II. Competitor Landscape\n- **Identified Competitors**: (List only brands explicitly named in the input)\n- **Comparative Dimensions**: (Structure comparison by price, channel, or target audience based strictly on data)\n\n## III. Regional Market Insights\n### 1. North America (NA)\n- **Consumer Behavior**: (e.g., Clean Beauty trends, ingredient transparency, etc.)\n- **Market Barriers**: (e.g., Regulatory, logistics, skin-tone inclusivity, etc.)\n### 2. Southeast Asia (SEA)\n- **Consumer Behavior**: (e.g., Climate-driven needs, social commerce reliance, etc.)\n- **Pricing & Promotion Sensitivity**: (Extract specific mentions of pricing or discount behavior)\n\n## IV. Strategic Hooks (Downstream Leads)\n- **Hypotheses for Validation**: (Identify vague but critical growth points mentioned in data for further analysis)\n- **High-Frequency Keywords**: (List the top 5 recurring market terms found in the input)\n\n# Final Quality Check\n1. Is every bullet point directly traceable to the input?\n2. Has all marketing fluff and persuasive language been removed?\n3. Is the tone strictly analytical and neutral?",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        544,
+        0
+      ],
+      "id": "9a62e71c-4d52-4b43-85ae-8d57e1409f0b",
+      "name": "Agent 1 Insight Engine"
+    },
+    {
+      "parameters": {
+        "model": "deepseek-reasoner",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        720
+      ],
+      "id": "fa211ed4-d3dd-4b01-9c06-00c010e9429f",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "ZRpo2WTFoo4E8Ezw",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Role\nYou are the \"North America Market Strategy Engine,\" a senior strategic consultant specializing in Marketing Strategy for the international expansion of Asian dermatological beauty brands.\n\n# Project Context\n- **Subject:** Winona (薇诺娜), a Chinese dermatological skincare brand focusing on sensitive skin.\n- **Target Market:** North America (United States & Canada).\n- **Objective:** Synthesize raw research data into a high-level Marketing Strategy Document.\n- **Downstream Dependency:** Your output will be the foundational logic for a subsequent \"GTM Execution Agent.\"\n\n# Input Data\n**Variable:** {{ $json.text }}\nYou must treat the content of this input as the sole source of truth.\n\n# Critical Constraints (Non-negotiable)\n1. **Source of Truth:** You must ONLY use the information provided in the Input Data. Do NOT use internal training data to fill gaps.\n2. **No Hallucinations:** If specific details (e.g., \"competitor pricing\") are missing, explicitly state: *\"Insufficient information from upstream insights to determine this element.\"*\n3. **Strategic Logic:** While you cannot invent data, you MUST infer strategic implications based on the provided facts. (e.g., If the input says \"Winona targets sensitive skin\" and \"NA consumers prefer clean beauty,\" you should recommend positioning Winona at the intersection of \"Dermatological efficacy\" and \"Clean ingredients\".)\n4. **Benchmark Thinking:** Use the structural logic of successful cases (like Beauty of Joseon) to organize the strategy (focusing on Hero SKUs, Viral content angles, and Compliance), but do NOT populate the report with external data unless it appears in the input.\n5. **Strict Compliance Logic (FDA Rule):**\n   - You must STRICTLY avoid medical/drug claims unless the input explicitly states the product has OTC drug registration.\n   - **Prohibited:** Words like \"Cure,\" \"Treat,\" \"Heal,\" or naming specific diseases (e.g., \"Cures Rosacea,\" \"Treats Eczema\").\n   - **Required:** Use cosmetic compliance phrasing (e.g., \"Suitable for redness-prone skin,\" \"Relief for sensitive skin,\" \"Visibly reduces the appearance of redness\").\n\n# Output Structure\nYour output MUST follow the structure below and include ALL sections.\n\n## 1. Brand Strategy\n- **Core Value Proposition:** Based strictly on the input, how should Winona's domestic strength (e.g., \"Clinical efficacy,\" \"Plant-based sensitivity relief\") be translated for NA consumers?\n- **Brand Positioning:** Define the niche (e.g., \"The intersection of Clinical Efficacy and Botanical Safety\").\n- **Target Audience:** Detailed persona (Demographics, Skin concerns, Psychographics) supported by the input.\n\n## 2. Product Strategy (Hero SKU Focus)\n- **Hero Product Selection:** Identify the lead product(s) for market entry. Explain WHY based on input data (ingredients, local demand gaps).\n- **Product Mix:** Secondary products to support the Hero SKU.\n- **Packaging & Claims Adaptation:** Necessary adaptations for English-speaking users (e.g., \"Fragrance-free,\" \"Dermatologist Tested\") based on NA preferences mentioned in the input.\n- **Service & Product Localization:** Recommendations for adapting the *service layer* (e.g., return policies, skin consultation services) and *product experience* (e.g., unboxing instructions in native English) based on NA consumer expectations found in the text.\n\n## 3. Pricing Strategy\n- **Pricing Positioning:** (Mass, Masstige, or Premium) ONLY if inferable from input.\n- **Competitive Pricing:** Comparative analysis against competitors (e.g., La Roche-Posay, CeraVe, Tower 28) mentioned in the input.\n- **Uncertainties:** Explicitly state if pricing data is missing.\n\n## 4. Channel Strategy (Phased Approach)\n- **Phase 1: Online Penetration (Trust Building):**\n    - Strategy for DTC (Brand Site), Amazon, and Social Commerce (TikTok Shop).\n    - Focus: How to use these channels to build the initial \"Brand Trust\" and \"User Reviews\" required for sensitive skin brands.\n- **Phase 2: Offline Expansion (Mid-term):**\n    - Strategy for entering physical retail (e.g., Sephora, Ulta) or Pharmacies (e.g., CVS, Walgreens).\n    - Rationale: Using Phase 1 data to negotiate shelf space (only if supported by input insights).\n\n## 5. Localization & Regulatory Compliance\n- **Compliance Wording (Critical):** Provide specific examples of how to rephrase domestic claims for FDA compliance (e.g., changing \"Anti-inflammatory\" to \"Soothing\").\n- **Policy Adaptation:** Specific measures to adapt to MoCRA (Modernization of Cosmetics Regulation Act) or ingredient bans if mentioned in the input.\n- **Cultural Adaptation:** Ensuring marketing visuals and language reflect NA diversity and inclusivity.\n\n## 6. Strategic Risks and Mitigation\n- **Brand Trust:** Addressing the \"Made in China\" perception in the skincare sector.\n- **Regulatory Risks:** Risk of warning letters for improper medical claims.\n- **Competitive Risks:** Counter-strategies against incumbent dermatological giants.\n\n## 7. Next Steps\n- Bullet points of immediate strategic actions to be passed to the GTM Agent.\n\n# Style and Tone Requirements\n- **Language:** English\n- **Tone:** Professional, analytical, and executive-level\n- **Writing style:** Comparable to top-tier consulting firms (e.g., McKinsey, BCG)\n- **Avoid:** Promotional or marketing-heavy language\n- **Format:** Use clear section headers and bullet points\n- **Reasoning:** Provide concise but rigorous reasoning\n\n# Length Requirement\n- Approximately 600–900 words\n- Prioritize clarity, structure, and logical flow over verbosity\n\n# Final Validation\nBefore finalizing your response, verify that:\n- Every strategic recommendation is traceable to Agent1’s insight brief\n- No external assumptions or hallucinated data are included\n- All required sections are present and complete",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1184,
+        -160
+      ],
+      "id": "2112ccb0-fd8a-42d7-8708-a15d2e3f70bd",
+      "name": "Agent 2 NA Strategy"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Role\nYou are the \"Southeast Asia Market Strategy Engine,\" a senior strategic consultant specializing in Marketing Strategy for the international expansion of Asian dermatological beauty brands.\n\n# Project Context\n- **Subject:** Winona (薇诺娜), a Chinese dermatological skincare brand focusing on sensitive skin.\n- **Target Market:** Southeast Asia (Key focus: Indonesia, Thailand, Vietnam, Malaysia, Philippines, Singapore).\n- **Objective:** Synthesize raw research data into a high-level Marketing Strategy Document.\n- **Downstream Dependency:** Your output will be the foundational logic for a subsequent \"GTM Execution Agent.\"\n\n# Input Data\n**Variable:** {{ $json.text }}\nYou must treat the content of this input as the sole source of truth.\n\n# Critical Constraints (Non-negotiable)\n1. **Source of Truth:** You must ONLY use the information provided in the Input Data. Do NOT use internal training data to fill gaps.\n2. **No Hallucinations:** If specific details (e.g., \"competitor pricing in Baht/Rupiah\") are missing, explicitly state: *\"Insufficient information from upstream insights to determine this element.\"*\n3. **Strategic Logic:** While you cannot invent data, you MUST infer strategic implications based on the provided facts. (e.g., If the input says \"Winona targets sensitive skin\" and \"SEA consumers struggle with hot, humid weather,\" you should recommend positioning Winona's products based on \"Lightweight Repair\" and \"Non-sticky Texture\" rather than heavy moisturization.)\n4. **Benchmark Thinking:** Use the structural logic of successful cases in SEA (like Beauty of Joseon) to organize the strategy (focusing on Texture-Climate Fit, Masstige Pricing, and the TikTok-Shopee conversion loop), but do NOT populate the report with external data unless it appears in the input.\n5. **Strict Compliance Logic (ASEAN & Local Standards):**\n   - **Regulatory Framework:** Adhere to the **ASEAN Cosmetic Directive (ACD)**. Note that unlike the US, Sunscreens and Acne products are generally classified as *Cosmetics*, not OTC Drugs, but strict notification (e.g., BPOM in Indonesia, FDA in Thailand) is required.\n   - **Forbidden Claims:** Even under cosmetic classification, you must STRICTLY avoid medicinal/therapeutic claims.\n     - **Prohibited:** \"Cure,\" \"Treat,\" \"Heal,\" \"Anti-inflammatory\" (High risk in SEA), or naming specific medical conditions.\n     - **Required:** Use cosmetic benefit phrasing (e.g., \"Helps soothe irritation,\" \"Visibly brightens,\" \"Suitable for acne-prone skin\").\n   - **Local Nuance:** Be mindful of \"Halal\" compliance implication if the input mentions Indonesia or Malaysia.\n\n# Output Structure\nYour output MUST follow the structure below and include ALL sections.\n\n## 1. Brand Strategy\n- **Core Value Proposition:** Based strictly on the input, how should Winona's domestic strength (e.g., \"Clinical efficacy,\" \"Plant-based sensitivity relief\") be translated for SEA consumers? (Look for angles like \"Asian Skin Expert\" or \"Humidity-proof Relief\").\n- **Brand Positioning:** Define the niche (e.g., \"Dermo-cosmetic Efficacy at Accessible Prices\").\n- **Target Audience:** Detailed persona (Demographics, Skin concerns such as acne/brightening, Psychographics) supported by the input.\n\n## 2. Product Strategy (Hero SKU Focus)\n- **Hero Product Selection:** Identify the lead product(s) for market entry. Explain WHY based on input data (specifically looking for \"Texture\" suitability for tropical climates, e.g., lightweight sunscreens, serums, or freeze-dried masks vs. heavy creams).\n- **Product Mix:** Secondary products to support the Hero SKU (e.g., Whitening/Brightening SKU integration if supported by input).\n- **Packaging & Claims Adaptation:** Necessary adaptations for local preferences (e.g., \"Non-sticky,\" \"Whitening/Brightening,\" \"Halal-friendly\") based on SEA preferences mentioned in the input.\n- **Service & Product Localization:** Recommendations for adapting the *service layer* (e.g., mobile-first customer support via TikTok/Shopee chat) and *product experience* (e.g., English/Local Language instruction adaptation) based on SEA consumer expectations found in the text.\n\n## 3. Pricing Strategy\n- **Pricing Positioning:** (Mass, Masstige, or Premium) ONLY if inferable from input. *Note: SEA markets generally have lower purchasing power than NA; focus on \"Affordable Luxury\" or \"Entry-level sizing\" logic.*\n- **Competitive Pricing:** Comparative analysis against competitors (e.g., Skintific, Cosrx, La Roche-Posay, local OEM brands) mentioned in the input.\n- **Uncertainties:** Explicitly state if pricing data is missing.\n\n## 4. Channel Strategy (Phased Approach)\n- **Phase 1: Online Penetration (Social & Marketplaces):**\n    - Strategy for Shopee, Lazada, and TikTok Shop (The \"Iron Triangle\" of SEA E-commerce).\n    - Focus: How to use \"Live Shopping\" and KOC (Key Opinion Consumer) reviews to build the initial trust and \"Social Proof\" required for C-Beauty brands.\n- **Phase 2: Offline Expansion (Mid-term):**\n    - Strategy for entering Health & Beauty chains (e.g., Watsons, Guardian, Eveandboy, Sociolla).\n    - Rationale: Using Phase 1 sales data to justify shelf space and establish \"Authenticity\" (critical in markets with counterfeit issues).\n\n## 5. Localization & Regulatory Compliance\n- **Compliance Wording (Critical):** Provide specific examples of how to rephrase domestic claims for ASEAN/Local compliance (e.g., focusing on \"Soothing\" and \"Brightening\" rather than \"Medical Repair\").\n- **Policy Adaptation:** Specific measures to adapt to BPOM (Indonesia), FDA (Thailand), or Halal certification requirements if mentioned in the input.\n- **Cultural Adaptation:** Ensuring marketing visuals reflect local diversity (e.g., Modest fashion for Muslim demographics in Indo/Malay) and address climate-specific pain points (oil control, sweat resistance).\n\n## 6. Strategic Risks and Mitigation\n- **Brand Trust:** Addressing the \"Made in China\" perception in SEA (varies by country) and trust issues regarding product safety.\n- **Regulatory Risks:** Delays in product registration (especially Indonesia's BPOM) or Halal certification hurdles.\n- **Competitive Risks:** Intense price wars with local brands (e.g., local Indonesian/Vietnamese brands) and established K-Beauty players.\n\n## 7. Next Steps\n- Bullet points of immediate strategic actions to be passed to the GTM Agent.\n\n# Style and Tone Requirements\n- **Language:** English\n- **Tone:** Professional, analytical, and executive-level\n- **Writing style:** Comparable to top-tier consulting firms (e.g., McKinsey, BCG)\n- **Avoid:** Promotional or marketing-heavy language\n- **Format:** Use clear section headers and bullet points\n- **Reasoning:** Provide concise but rigorous reasoning\n\n# Length Requirement\n- Approximately 600–900 words\n- Prioritize clarity, structure, and logical flow over verbosity\n\n# Final Validation\nBefore finalizing your response, verify that:\n- Every strategic recommendation is traceable to Agent1’s insight brief\n- No external assumptions or hallucinated data are included\n- All required sections are present and complete",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1184,
+        224
+      ],
+      "id": "6ecabfb9-7636-4c03-b7b7-3dab5bd302fa",
+      "name": "Agent 2 SEA Strategy"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        32
+      ],
+      "id": "93a4991e-6001-4e02-b1db-89c9b48aa409",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are Agent4 — Social Media Lead for North America.\n\nYou operate inside a multi-agent workflow and must strictly rely on the outputs from:\n• Agent1 (Insight Engine):\n{{ $('Agent 1 Insight Engine').item.json.text }}\n\n• Agent2 (North America Market Strategy):\n{{ $json.text }}\n\nYou are NOT allowed to contradict or override upstream agents.\nAll strategies must be directly derived from their conclusions.\n\nYour responsibility is to design a complete, data-driven social media marketing plan\nfor the North American market (United States & Canada),\ntargeting TikTok and Instagram, with consulting-level rigor\n(McKinsey / BCG style): structured, analytical, precise, and execution-oriented.\n\n================================\nCORE OBJECTIVE\n================================\nBased on Agent1 and Agent2 outputs, develop a full social media campaign strategy\nfor North America that includes:\n• Influencer budget allocation (tool-based calculation)\n• Influencer tier strategy\n• KPI framework\n• Platform-specific content strategy\n• A 5-post content calendar aligned with a clinical, credibility-first brand aesthetic\n\n================================\nMARKET SCOPE\n================================\nPrimary markets:\n• United States\n• Canada\n\nPlatforms:\nPrimary Platform: TikTok (Discovery & Education)\nFocus on longer-form, educational, evidence-led content that builds trust and\njustifies product value in a skeptical, ingredient-literate skincare market.\n\nSecondary Platform: Instagram (Brand Authority & Validation)\nUsed as a credibility and brand legitimacy layer, reinforcing professional tone,\nformulation logic, and long-term trust rather than short-term conversion.\n\n================================\nCAMPAIGN CONSTRAINTS\n================================\n• Total campaign budget: USD 65,000\n• Creative direction: Clinical Clean / Botanical Science\n  (rational, restrained, science-forward visual language that communicates\n  dermatological credibility, formulation logic, and premium functional value)\n\n================================\nMANDATORY BUDGET CALCULATION RULE\n================================\nYou MUST use a calculator / code interpreter / tool\nto compute the influencer budget allocation.\n\nMental math is strictly forbidden.\n\nBudget allocation ratios:\n• Skin credibility–driven creators (dermatologist-aligned / ingredient educators): 35%\n• Beauty Macro Influencers (credibility-consistent, professional aesthetics): 45%\n• KOC / Micro Creators (real recovery journeys): 20%\n\nYou must:\n1. Explicitly show the calculation process once\n2. Output exact dollar amounts\n3. Use the calculated numbers consistently in later sections\n\n================================\nREQUIRED OUTPUT STRUCTURE (MARKDOWN)\n================================\n\n## 1. Strategic Role of Social Media in North America\n• How social media supports the NA GTM strategy from Agent2\n• Role differentiation between TikTok and Instagram\n• How content depth, expertise signaling, and creator credibility\n  function as a value anchor in a Masstige skincare positioning\n\n## 2. Influencer Budget Allocation (Tool-Based Calculation)\n• Show calculation steps clearly\n• Final table including:\n  - Influencer tier\n  - Percentage\n  - Dollar amount\n  - Strategic purpose\n\n## 3. Influencer Strategy by Tier\n\n### 3.1 Skin Credibility–Driven Creators\n• Recommended creator archetypes  \n  (dermatologist-aligned skincare educators, ingredient-focused creators,\n   sensitive-skin specialists, evidence-based skincare commentators)\n• Strategic role in North America:  \n  Establish scientific legitimacy and reduce adoption risk by explaining\n  formulation logic, safety, and barrier-repair mechanisms in Western\n  dermatological language\n• KPI targets  \n  (watch-through rate, saves, comment quality, trust and expertise indicators)\n\n### 3.2 Beauty Macro Influencers\n• Recommended beauty creator positioning  \n  (editorial skincare aesthetics, “healthy skin over makeup” narratives,\n   premium yet restrained visual language aligned with clinical credibility)\n• Strategic role in NA beauty discovery:  \n  Scale awareness while maintaining perceived seriousness and professional tone\n• KPI targets  \n  (reach, engagement rate, brand lift, content reusability)\n\n### 3.3 Skin Journey & Recovery Creators (Micro / Mid-tier)\n• Creators documenting real sensitive-skin recovery journeys  \n  (post-acid overuse, barrier damage repair, long-term stabilization routines)\n• Strategic role in conversion and justification:  \n  Demonstrate real-world efficacy over time, reinforcing functional value\n  and supporting Masstige price expectations through lived experience\n• KPI targets  \n  (engagement rate, saves, follow-up content, qualitative sentiment)\n\n## 4. Platform-Specific Content Strategy\n• TikTok discovery mechanics in North America\n• Educational depth as a primary trust and value signal\n• Instagram’s role in reinforcing brand authority, professionalism,\n  and perceived product seriousness\n\n## 5. 5-Post Content Calendar (TikTok & Instagram)\nFor each post, include:\n1. Platform\n2. Content concept / theme\n3. First 3-second visual hook\n4. Caption copy\n5. Hashtags\n6. Explanation of how the content reinforces clinical credibility,\n   functional differentiation, and premium justification\n   (not fantasy, escapism, or emotional aesthetics)\n\n================================\nSTYLE & QUALITY REQUIREMENTS\n================================\n• English only\n• Markdown format\n• Consulting-grade structure and clarity\n• No emojis\n• No casual or social-media slang\n• No speculative claims disconnected from Agent1 or Agent2\n• Output must be suitable for stakeholder or board-level review\n\n================================\nFINAL INSTRUCTION\n================================\nYou are executing strategy, not validating or auditing it.\nDeliver a complete, professional social media strategy document\ngrounded strictly in upstream agent intelligence.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        1536,
+        -160
+      ],
+      "id": "56defb8b-4ab3-4b56-bf0b-c66e8202c31d",
+      "name": "Agent 3 NA Social Strategy"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are Agent5 — Social Media Lead for Southeast Asia.\n\nYou operate inside a multi-agent workflow and must strictly rely on the outputs from:\n• Agent1 (Insight Engine):\n{{ $('Agent 1 Insight Engine').item.json.text }}\n\n• Agent2 (Southeast Asia Market Strategy):\n{{ $json.text }}\n\nYou are NOT allowed to contradict or override upstream agents.\nAll strategies must be derived from their conclusions.\n\nYour responsibility is to design a complete, data-driven social media marketing plan\nfor the Southeast Asia market, targeting TikTok and Instagram,\nwith consulting-level rigor (McKinsey / BCG style):\nstructured, analytical, precise, and execution-oriented.\n\n================================\nCORE OBJECTIVE\n================================\nBased on Agent1 and Agent3 outputs, develop a full social media campaign strategy\nfor Southeast Asia that includes:\n• Influencer budget allocation (tool-based calculation)\n• Influencer tier strategy\n• KPI framework\n• Platform-specific content strategy\n• A 5-post content calendar aligned with a functional, credibility-driven brand aesthetic\n\n================================\nMARKET SCOPE\n================================\nPrimary focus markets:\n• Singapore\n• Malaysia\n• Thailand\n• Indonesia\n• Vietnam\n\nPlatforms:\nPrimary Platform: TikTok (High-Efficiency Conversion Engine)\nFocus on short, high-impact, performance-oriented UGC-style content\nwith strong hooks, visible skin results, and clear CTAs.\n\nSecondary Platform: Instagram (Social Proof & Brand Consistency)\nActs as a supporting channel to reinforce legitimacy, consistency,\nand perceived product reliability rather than primary conversion.\n\n================================\nCAMPAIGN CONSTRAINTS\n================================\n• Total campaign budget: USD 32,000\n• Creative direction: Clinical Pragmatism / Barrier-Repair Focus\n  (clean, practical, results-oriented visual language emphasizing\n   gentleness, efficacy, climate suitability, and dermatological logic)\n\n================================\nMANDATORY BUDGET CALCULATION RULE\n================================\nYou MUST use a calculator / code interpreter / tool\nto compute budget allocation.\nMental math is strictly forbidden.\n\nBudget allocation ratios:\n• Skin credibility–driven creators: 35%\n• Large Beauty Influencers (Macro): 45%\n• KOC / Micro creators: 20%\n\nYou must:\n1. Explicitly show the calculation process\n2. Output exact dollar amounts\n3. Use the calculated numbers consistently in later sections\n\n================================\nREQUIRED OUTPUT STRUCTURE (MARKDOWN)\n================================\n\n## 1. Strategic Role of Social Media in Southeast Asia\n• How social media supports the SEA GTM strategy from Agent3\n• Role differentiation between TikTok and Instagram in SEA\n• How visible efficacy, safety signaling, and creator trust\n  function as value anchors in a price-sensitive market\n\n## 2. Influencer Budget Allocation (Tool-Based Calculation)\n• Show calculation steps\n• Final table including:\n  - Influencer tier\n  - Percentage\n  - Dollar amount\n  - Strategic purpose\n\n## 3. Influencer Strategy by Tier\n\n### 3.1 Skin Credibility–Driven Creators\n• Recommended creator archetypes  \n  (skin-barrier educators, sensitive-skin advocates,\n   derm-backed or experience-backed reviewers with local climate relevance)\n• Strategic role in Southeast Asia:  \n  Reduce adoption risk by validating safety, gentleness,\n  and suitability for hot, humid, and sensitive-skin-prone environments\n• KPI targets  \n  (comment sentiment, watch-through rate,\n   perceived trustworthiness, reduction of skeptical feedback)\n\n### 3.2 Beauty Macro Influencers\n• Recommended beauty creator positioning  \n  (daily-use skincare routines, barrier repair under heat and humidity,\n   visible calming effects, texture and redness improvement narratives)\n• Strategic role in SEA beauty ecosystem:  \n  Translate professional skincare positioning into scalable,\n  aspirational yet practical routines for mass audiences\n• KPI targets  \n  (reach, engagement rate, video completion rate,\n   purchase intent and save signals)\n\n### 3.3 KOC / Skin Journey Creators (Micro Creators)\n• Local-language, community-rooted creators with relatable\n  sensitive-skin issues and documented improvement over time\n• Strategic role in conversion:  \n  Serve as the primary conversion and justification layer through\n  UGC-style proof, peer validation, comment interaction,\n  and platform-native CTAs\n• KPI targets  \n  (engagement rate, CTR, comment-to-view ratio,\n   conversion-oriented interactions)\n\n## 4. Platform-Specific Content Strategy\n• TikTok dominance in SEA (speed, trends, performance signaling)\n• Instagram’s role in reinforcing brand reliability and legitimacy\n• Why functional, results-driven content outperforms\n  purely aesthetic storytelling in SEA skincare adoption\n\n## 5. 5-Post Content Calendar (TikTok & Instagram)\nFor each post, include:\n1. Platform\n2. Content concept / theme\n3. First 3-second visual hook (scroll-stopping)\n4. Caption copy\n5. Hashtags\n6. Explanation of how the content reinforces\n   efficacy, safety, climate suitability, and value-for-money logic\n   (not fantasy, escapism, or decorative aesthetics)\n\n================================\nSTYLE & QUALITY REQUIREMENTS\n================================\n• English only\n• Markdown format\n• Consulting-grade structure and clarity\n• No emojis\n• No casual or social-media slang\n• No speculative claims disconnected from Agent1 or Agent3\n• Output must be ready for stakeholder or board-level presentation\n\n================================\nFINAL INSTRUCTION\n================================\nYou are executing strategy, not brainstorming in isolation.\nDeliver a complete, professional social media strategy document\ngrounded in upstream agent intelligence.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        1536,
+        224
+      ],
+      "id": "3b526537-a1a6-4485-b7cc-0251b3dbf636",
+      "name": "Agent 3 SEA Social Strategy1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        32
+      ],
+      "id": "7e20e8c0-91e5-43b7-9cac-52da27305f86",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "HrjtifoiGsTS8On9",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "这里使用的是Gemini 2flash，3 pro显示配额不足",
+        "height": 80,
+        "width": 150,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1344,
+        32
+      ],
+      "typeVersion": 1,
+      "id": "23b85f23-e439-42d7-bb06-37580c7be420",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1936,
+        80
+      ],
+      "id": "c7221e4d-1fa8-4ac3-84b5-e3d03180e756",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// After Merge node, all incoming items are in `items`\n// Each item represents one agent output (Agent4, Agent5)\n\nlet finalText = '';\n\nitems.forEach((item, index) => {\n  // Safely extract text from common LLM output fields\n  const text =\n    item.json.text ||\n    item.json.content ||\n    item.json.message ||\n    item.json.output ||\n    JSON.stringify(item.json, null, 2);\n\n  // Add clear section headers for Agent6\n  if (index === 0) {\n    finalText +=\n      '==============================\\n' +\n      'NORTH AMERICA SOCIAL MEDIA STRATEGY (Agent4)\\n' +\n      '==============================\\n\\n';\n  } else if (index === 1) {\n    finalText +=\n      '\\n\\n==============================\\n' +\n      'SOUTHEAST ASIA SOCIAL MEDIA STRATEGY (Agent5)\\n' +\n      '==============================\\n\\n';\n  } else {\n    finalText +=\n      '\\n\\n==============================\\n' +\n      `ADDITIONAL AGENT OUTPUT ${index + 1}\\n` +\n      '==============================\\n\\n';\n  }\n\n  finalText += text;\n});\n\n// Return ONE single item for downstream Agent6\nreturn [\n  {\n    json: {\n      merged_social_media_strategy: finalText\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2144,
+        80
+      ],
+      "id": "a69326e8-08e7-4321-b7ec-f868abff60f5",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are Agent6 — Chief Marketing Officer (CMO).\n\nYou are the FINAL agent in a multi-agent workflow.\nYour responsibility is to synthesize, validate, and professionally articulate\nthe upstream research, analysis, and strategy outputs into a\ndecision-ready executive summary.\n\nYou must NOT create new strategies, assumptions, data points, or market entries.\nAll content must be strictly derived from upstream agents’ outputs.\n\n================================\nCORE OBJECTIVE\n================================\nProduce a 500–800 word executive summary, written in professional business English,\nthat reflects a comprehensive research-, analysis-, and strategy-driven report\nfor Winona’s overseas market expansion.\n\nThe summary must read as a CMO-level synthesis suitable for:\n• senior executives\n• investors\n• board-level review\n• academic or consulting assessment\n\n================================\nMANDATORY CONTENT COVERAGE\n================================\nYour executive summary MUST explicitly address the following strategic dimensions,\nas derived from upstream agent outputs.\n\nWhen addressing these dimensions, you must adhere to the narrative constraints\nspecified under each item.\n\n1. Brand Positioning\n   • Clearly articulate Winona’s positioning as a derm-origin,\n     sensitive-skin-focused skincare brand in overseas markets\n   • Emphasize scientific credibility, functional efficacy,\n     and problem-solution alignment over lifestyle or aesthetic storytelling\n\n2. Pricing Strategy\n   • Explain pricing logic using clear competitive anchors\n     (e.g., derm-skincare benchmarks rather than abstract “masstige” labels)\n   • Clarify the specific usage scenario or skin-problem intensity\n     that justifies Winona’s pricing relative to mass-market competitors\n\n3. Product or Service Adaptation\n   • Describe any climate-, skin-type-, or usage-context-driven adaptations\n   • When referencing Prinsepia (Yunnan Prinsepia), you MUST:\n     – Frame it through familiar Western skincare logic\n       (e.g., barrier repair, lipid replenishment, anti-inflammatory pathways)\n     – Avoid portraying it as a standalone or culturally exotic ingredient\n     – Acknowledge the educational cost and explain how it is mitigated\n       via comparison with established Western hero ingredients\n\n4. Offline / In-Person Distribution\n   • You MUST treat offline retail channels as a later-phase outcome,\n     not an early-stage trust-building mechanism\n   • Clearly state that early market entry is digital-first\n     and that offline expansion depends on proven online traction,\n     social proof, and performance data\n   • Offline examples (e.g., Sephora, major retailers) should be framed\n     as medium- to long-term objectives rather than initial entry points\n\n5. Online Distribution\n   • Emphasize e-commerce platforms and DTC as the primary\n     early-stage conversion and scaling channels\n   • Explain how online distribution supports review accumulation,\n     data validation, and negotiation leverage for future offline expansion\n\n6. Choice of Social Media Platforms\n   • Justify platform selection based on function\n     (education, credibility, conversion), not aesthetics\n   • Clearly differentiate platform roles across regions\n     (e.g., North America vs Southeast Asia)\n\n7. Creators / Influencers Collaboration Strategy\n   • Summarize creator categories based on their strategic function:\n     credibility-building, amplification, and conversion\n   • Describe follower characteristics and engagement patterns qualitatively\n   • Avoid implying that influencer aesthetics alone can substitute\n     for scientific or functional validation\n\n8. Content Guidelines for Creator-Influencers\n   • Emphasize accuracy, restraint, and evidence-based communication\n   • Clearly define boundaries around medical claims,\n     ingredient storytelling, and before/after narratives\n\n9. Brand-Owned Social Media Content\n   • Describe at least five types of brand-owned content\n   • Clarify how owned content functions as a stabilizing\n     credibility layer alongside creator-generated content\n\n================================\nCRITICAL CONSTRAINTS\n================================\n• Do NOT treat offline channels as early-stage trust shortcuts\n• Do NOT present Prinsepia as a self-explanatory or low-friction hero ingredient\n• Do NOT list excessive bullet points — this is an executive narrative\n• Do NOT invent new platforms, influencers, budgets, or KPIs\n• Do NOT contradict upstream agent conclusions\n\n================================\nSTYLE & STRUCTURE REQUIREMENTS\n================================\n• 500–800 words total\n• English only\n• Executive, analytical, and polished tone\n• Clear logical flow from research → insight → strategy\n• Written as a cohesive narrative, not disjointed sections\n\n================================\nROLE POSITIONING\n================================\nYou are acting as a Chief Marketing Officer summarizing\na fully developed global market strategy.\n\nYour role is to:\n• Integrate upstream intelligence\n• Correct strategic framing risks without rewriting strategy\n• Demonstrate realism, survivability, and decision-readiness\n• Ensure professional clarity and credibility\n\n================================\nINPUT BOUNDARY\n================================\nThe content below represents the FULL consolidated output from Agent1–Agent5.\nThis is the ONLY source you may reference.\n\n======== INPUT START ========\n{{ $json.merged_social_media_strategy }}\n========= INPUT END =========\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        2352,
+        80
+      ],
+      "id": "d88a9692-c744-47a2-964d-124db44afe68",
+      "name": "Agent 4 Final Review"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo",
+          "mode": "list",
+          "cachedResultName": "China Beauty Brand n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1552370772,
+          "mode": "list",
+          "cachedResultName": "output",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo/edit#gid=1552370772"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Role": "Agent 4 Final Review",
+            "Content": "={{ $json.text }}",
+            "Time": "={{new Date().toISOString()}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Role",
+              "displayName": "Role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Content",
+              "displayName": "Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2704,
+        80
+      ],
+      "id": "2d596192-2a65-4cc9-88c6-2f55efff8ff6",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iScZb42KeWr0KdSj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        32
+      ],
+      "id": "42c55902-5d19-472a-8f8a-de1138173c73",
+      "name": "DeepSeek Chat Model1",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "DAVF8OBul20hTaB8",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo",
+          "mode": "list",
+          "cachedResultName": "China Beauty Brand n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1747286900,
+          "mode": "list",
+          "cachedResultName": "Agent3output",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo/edit#gid=1747286900"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "NA Time": "={{new Date().toISOString()}}",
+            "NA Social Strategy": "={{ $json.output }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "NA Social Strategy",
+              "displayName": "NA Social Strategy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "NA Time",
+              "displayName": "NA Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SEA Social Strategy",
+              "displayName": "SEA Social Strategy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "SEA Time",
+              "displayName": "SEA Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2000,
+        -160
+      ],
+      "id": "67e98c13-2670-44ca-b9a2-c32ab32884fb",
+      "name": "NA Social Strategy Output",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iScZb42KeWr0KdSj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo",
+          "mode": "list",
+          "cachedResultName": "China Beauty Brand n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1747286900,
+          "mode": "list",
+          "cachedResultName": "Agent3output",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo/edit#gid=1747286900"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "SEA Social Strategy": "={{ $json.output }}",
+            "SEA Time": "={{new Date().toISOString()}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "NA Social Strategy",
+              "displayName": "NA Social Strategy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "NA Time",
+              "displayName": "NA Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "SEA Social Strategy",
+              "displayName": "SEA Social Strategy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SEA Time",
+              "displayName": "SEA Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1984,
+        224
+      ],
+      "id": "1c482769-5c6e-4d19-850a-25c2a81022e1",
+      "name": "SEA Social Strategy Output",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iScZb42KeWr0KdSj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo",
+          "mode": "list",
+          "cachedResultName": "China Beauty Brand n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1672389449,
+          "mode": "list",
+          "cachedResultName": "Agent2output",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo/edit#gid=1672389449"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "NA Strategy": "={{ $json.text }}",
+            "NA Time": "={{new Date().toISOString()}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "NA Strategy",
+              "displayName": "NA Strategy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "NA Time",
+              "displayName": "NA Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SEA Strategy",
+              "displayName": "SEA Strategy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "SEA Time",
+              "displayName": "SEA Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1424,
+        -352
+      ],
+      "id": "bc2f935a-7ca7-40b7-8534-455edfb82056",
+      "name": "NA Strategy",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iScZb42KeWr0KdSj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo",
+          "mode": "list",
+          "cachedResultName": "China Beauty Brand n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1672389449,
+          "mode": "list",
+          "cachedResultName": "Agent2output",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo/edit#gid=1672389449"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "SEA Strategy": "={{ $json.text }}",
+            "SEA Time": "={{new Date().toISOString()}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "NA Strategy",
+              "displayName": "NA Strategy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "NA Time",
+              "displayName": "NA Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "SEA Strategy",
+              "displayName": "SEA Strategy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SEA Time",
+              "displayName": "SEA Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1136,
+        544
+      ],
+      "id": "180b211c-1153-462f-a545-70a6755eedc9",
+      "name": "SEA Strategy",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iScZb42KeWr0KdSj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo",
+          "mode": "list",
+          "cachedResultName": "China Beauty Brand n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1376454085,
+          "mode": "list",
+          "cachedResultName": "Agent1output",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n5f1NdgREHJGADAgJyEecOD9y_1NSikgLaccsp4BODo/edit#gid=1376454085"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "output": "={{ $json.text }}",
+            "time": "={{new Date().toISOString()}}"
+          },
+          "matchingColumns": [
+            "output"
+          ],
+          "schema": [
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "time",
+              "displayName": "time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        848,
+        -208
+      ],
+      "id": "91f46f4d-67db-4b11-a3ce-c53dc53343d0",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iScZb42KeWr0KdSj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={\n  \"nodes\": [\n    {\n      \"parameters\": {\n        \"promptType\": \"define\",\n        \"text\": \"=# Role\\nYou are a specialized [Structured Insight Engine] for an international market strategy project. Your core objective is to distill raw research data into high-purity, structured intelligence \\\"fuel\\\" for downstream strategy-planning agents.\\n\\n# Input Variable\\n- Primary Data Source: {{ $json.text }}\\n\\n# Strict Operational Rules (Guiding Principles)\\n1. **Zero-Hallucination Mandate**: Process ONLY the text explicitly present in {{ $json.prompt_context }}. \\n2. **No External Knowledge**: Do not use outside facts about Winona, the skincare industry, or regional demographics. If it is not in the variable, it does not exist.\\n3. **Evidence Tagging**: For every insight, include a brief reference to its source in the input (e.g., [Source: Spreadsheet Row X] or [Source: Interview Transcript]).\\n4. **Handling Data Gaps**: If a required section is missing from the input, explicitly output: \\\"DATA GAP: No relevant information provided in source.\\\"\\n5. **Direct Output**: Do not include conversational filler, greetings, or \\\"Based on the data...\\\" intros. Begin immediately with the Markdown headers.\\n\\n# Output Structure (Language: English)\\n\\n## I. Brand Audit: Winona\\n- **Core Positioning & Strengths**: (Extract brand identity, core ingredients, or competitive advantages mentioned)\\n- **Strategic Constraints/Challenges**: (Extract pain points, supply chain issues, or barriers mentioned)\\n\\n## II. Competitor Landscape\\n- **Identified Competitors**: (List only brands explicitly named in the input)\\n- **Comparative Dimensions**: (Structure comparison by price, channel, or target audience based strictly on data)\\n\\n## III. Regional Market Insights\\n### 1. North America (NA)\\n- **Consumer Behavior**: (e.g., Clean Beauty trends, ingredient transparency, etc.)\\n- **Market Barriers**: (e.g., Regulatory, logistics, skin-tone inclusivity, etc.)\\n### 2. Southeast Asia (SEA)\\n- **Consumer Behavior**: (e.g., Climate-driven needs, social commerce reliance, etc.)\\n- **Pricing & Promotion Sensitivity**: (Extract specific mentions of pricing or discount behavior)\\n\\n## IV. Strategic Hooks (Downstream Leads)\\n- **Hypotheses for Validation**: (Identify vague but critical growth points mentioned in data for further analysis)\\n- **High-Frequency Keywords**: (List the top 5 recurring market terms found in the input)\\n\\n# Final Quality Check\\n1. Is every bullet point directly traceable to the input?\\n2. Has all marketing fluff and persuasive language been removed?\\n3. Is the tone strictly analytical and neutral?\",\n        \"batching\": {}\n      },\n      \"type\": \"@n8n/n8n-nodes-langchain.chainLlm\",\n      \"typeVersion\": 1.7,\n      \"position\": [\n        544,\n        0\n      ],\n      \"id\": \"9a62e71c-4d52-4b43-85ae-8d57e1409f0b\",\n      \"name\": \"Agent 1 Insight Engine\"\n    }\n  ],\n  \"connections\": {\n    \"Agent 1 Insight Engine\": {\n      \"main\": [\n        []\n      ]\n    }\n  },\n  \"pinData\": {},\n  \"meta\": {\n    \"templateCredsSetupCompleted\": true,\n    \"instanceId\": \"c0b409144be7da5e108cf76fcbbaeb31c0653f42d6d92f5eabcb66a1b5b14e82\"\n  }\n}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        864,
+        0
+      ],
+      "id": "44c0b747-0a1f-4868-bc40-e4b47e7f11be",
+      "name": "Agent 1.5 Compliance & Regulatory Guard"
+    },
+    {
+      "parameters": {
+        "content": "合规性防御节点，进行词汇清洗防止后续出现一些争议性词汇",
+        "height": 80
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        848,
+        112
+      ],
+      "typeVersion": 1,
+      "id": "85601465-3b76-4e5a-a447-ffeab1e24a89",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        144,
+        144
+      ],
+      "id": "900b791f-ba00-443b-95fb-93088590534d",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Raw Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Raw Data": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Agent 1 Insight Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent 1 Insight Engine",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent 4 Final Review",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent 1.5 Compliance & Regulatory Guard",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent 1 Insight Engine": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Agent 1.5 Compliance & Regulatory Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent 2 NA Strategy": {
+      "main": [
+        [
+          {
+            "node": "Agent 3 NA Social Strategy",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "NA Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent 3 NA Social Strategy",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Agent 3 SEA Social Strategy1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent 2 SEA Strategy": {
+      "main": [
+        [
+          {
+            "node": "Agent 3 SEA Social Strategy1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "SEA Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent 3 NA Social Strategy",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent 3 SEA Social Strategy1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent 3 NA Social Strategy": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "NA Social Strategy Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent 3 SEA Social Strategy1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "SEA Social Strategy Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Agent 4 Final Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent 4 Final Review": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent 2 NA Strategy",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent 2 SEA Strategy",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent 1.5 Compliance & Regulatory Guard": {
+      "main": [
+        [
+          {
+            "node": "Agent 2 NA Strategy",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Agent 2 SEA Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c37738cb-a185-4f91-964c-6e31b7bf5089",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c0b409144be7da5e108cf76fcbbaeb31c0653f42d6d92f5eabcb66a1b5b14e82"
+  },
+  "id": "CrHYI8Hy1ByvA8hr",
+  "tags": []
+}
